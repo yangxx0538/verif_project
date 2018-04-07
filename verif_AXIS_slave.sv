@@ -30,9 +30,9 @@
 	);
 
 	// Add user logic here
-	// AXI4STREAM_ERRM_TVALID_RESET: assert property (
-		// @(posedge s00_axis_aclk) $rose(s00_axis_aresetn) |-> s00_axis_tvalid == 0
-	// );
+	AXI4STREAM_ERRM_TVALID_RESET: assert property (
+		@(posedge s00_axis_aclk) $rose(s00_axis_aresetn) |-> s00_axis_tready == 0
+	);
 	
 	// property stable_value(signal, condition);
 		// @(posedge s00_axis_aclk) disable iff (~s00_axis_aresetn | ~condition) 
@@ -40,11 +40,40 @@
 			// condition |=> ##1 (signal == $past(signal,1));
 	// endproperty
 	
+	
+	AXI4STREAM_RECS_TREADY_MAX_WAIT: assert property (
+		@(posedge s00_axis_aclk) disable iff (~s00_axis_aresetn)  $rose(s00_axis_tvalid) |-> ##[0:2] (s00_axis_tready)
+	);
+	
+	property stable_value(signal, condition);
+		@(posedge s00_axis_aclk) disable iff (~s00_axis_aresetn | ~condition) 
+			condition |=> ##1 (signal == $past(signal,1));
+	endproperty
+	AXI4STREAM_ERRM_TDATA_STABLE: assert property (stable_value(s00_axis_tdata, s00_axis_tvalid && ~s00_axis_tready));
+	AXI4STREAM_ERRM_TSTRB_STABLE: assert property (stable_value(s00_axis_tstrb, s00_axis_tvalid && ~s00_axis_tready));
+	AXI4STREAM_ERRM_TLAST_STABLE: assert property (stable_value(s00_axis_tlast, s00_axis_tvalid && ~s00_axis_tready));
+	AXI4STREAM_ERRM_TVALID_STABLE: assert property (stable_value(s00_axis_tvalid, s00_axis_tvalid && ~s00_axis_tready));
+	
+	
 	property x_not_permit_rst(signal);
 		@(posedge s00_axis_aclk) s00_axis_aresetn |-> ~$isunknown(signal);
 	endproperty
 	
 	AXI4STREAM_ERRS_TREADY_X: assert property (x_not_permit_rst(s00_axis_tready));
+	
+	
+	cover property (
+		@(posedge s00_axis_aclk) $rose(s00_axis_tvalid)
+	);
+	cover property (
+		@(posedge s00_axis_aclk) $rose(s00_axis_tready)
+	);
+	cover property (
+		@(posedge s00_axis_aclk) $rose(s00_axis_tlast)
+	);
+	cover property (
+		@(posedge s00_axis_aclk) s00_axis_tready && s00_axis_tvalid
+	);
 	// User logic ends
 
 	endmodule

@@ -10,7 +10,7 @@
 
 
 		// Parameters of Axi Master Bus Interface M00_AXIS
-		parameter integer C_M00_AXIS_TDATA_WIDTH	= 0,
+		parameter integer C_M00_AXIS_TDATA_WIDTH	= 32,
 		parameter integer C_M00_AXIS_START_COUNT	= 32
 	)
 	(
@@ -36,6 +36,8 @@
 
 	// Add user logic here property for verification
 	
+	
+	
 	AXI4STREAM_ERRM_TVALID_RESET: assert property (
 		@(posedge m00_axis_aclk) $rose(m00_axis_aresetn) |-> m00_axis_tvalid == 0
 	);
@@ -53,11 +55,7 @@
 	AXI4STREAM_ERRM_TLAST_STABLE: assert property (stable_value(m00_axis_tlast, m00_axis_tvalid && ~m00_axis_tready));
 	// AXI4STREAM_ERRM_TKEEP_STABLE: assert property (stable_value(M_AXIS_TKEEP));
 	AXI4STREAM_ERRM_TVALID_STABLE: assert property (stable_value(m00_axis_tvalid, m00_axis_tvalid && ~m00_axis_tready));
-	
-	
-	// AXI4STREAM_RECS_TREADY_MAX_WAIT: assert property (
-		// @(posedge m00_axis_aclk) disable iff (~m00_axis_aresetn)  $rose(m00_axis_tvalid) |-> ##[0:32] (m00_axis_tready)
-	// );
+
 	
 	property x_not_permit(signal);
 		@(posedge m00_axis_aclk) disable iff (~m00_axis_aresetn) m00_axis_tvalid |-> ~$isunknown(signal);
@@ -100,6 +98,13 @@
 	cover property (
 		@(posedge m00_axis_aclk) $rose(m00_axis_tready)
 	);
+	cover property (
+		@(posedge m00_axis_aclk) $rose(m00_axis_tlast)
+	);
+	cover property (
+		@(posedge m00_axis_aclk) m00_axis_tready && m00_axis_tvalid
+	);
+	
 	// User logic ends
 
 	endmodule
