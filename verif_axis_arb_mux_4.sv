@@ -140,6 +140,16 @@ assert property(
 	@(posedge clk) $fell(rst) |-> (!grant)
 );
 
+assert property (@(posedge clk) disable iff (rst) 
+						($past(request[3],1)  ) |-> grant[3]);
+assert property (@(posedge clk) disable iff (rst) 
+						($past(!request[3],1))&($past(request[2],1))   |-> grant[2]);
+assert property (@(posedge clk) disable iff (rst) 
+						($past(!request[3],1))&($past(!request[2],1))&($past(request[1],1))   |-> grant[1]);
+assert property (@(posedge clk) disable iff (rst) 
+						($past(!request[3],1))&($past(!request[2],1))&($past(!request[1],1))&($past(request[0],1))  ) |-> grant[0]);
+						
+						
 endmodule
 
 
