@@ -53,143 +53,96 @@ module axis_arb_mux_4 #
      * AXI inputs
      */
     input  wire [DATA_WIDTH-1:0]  input_0_axis_tdata,
-    input  wire [KEEP_WIDTH-1:0]  input_0_axis_tkeep,
     input  wire                   input_0_axis_tvalid,
-    output wire                   input_0_axis_tready,
+    input wire                   input_0_axis_tready,
     input  wire                   input_0_axis_tlast,
-    input  wire [ID_WIDTH-1:0]    input_0_axis_tid,
-    input  wire [DEST_WIDTH-1:0]  input_0_axis_tdest,
-    input  wire [USER_WIDTH-1:0]  input_0_axis_tuser,
 
     input  wire [DATA_WIDTH-1:0]  input_1_axis_tdata,
-    input  wire [KEEP_WIDTH-1:0]  input_1_axis_tkeep,
     input  wire                   input_1_axis_tvalid,
-    output wire                   input_1_axis_tready,
+    input wire                   input_1_axis_tready,
     input  wire                   input_1_axis_tlast,
-    input  wire [ID_WIDTH-1:0]    input_1_axis_tid,
-    input  wire [DEST_WIDTH-1:0]  input_1_axis_tdest,
-    input  wire [USER_WIDTH-1:0]  input_1_axis_tuser,
 
     input  wire [DATA_WIDTH-1:0]  input_2_axis_tdata,
-    input  wire [KEEP_WIDTH-1:0]  input_2_axis_tkeep,
     input  wire                   input_2_axis_tvalid,
-    output wire                   input_2_axis_tready,
+    input wire                   input_2_axis_tready,
     input  wire                   input_2_axis_tlast,
-    input  wire [ID_WIDTH-1:0]    input_2_axis_tid,
-    input  wire [DEST_WIDTH-1:0]  input_2_axis_tdest,
-    input  wire [USER_WIDTH-1:0]  input_2_axis_tuser,
 
     input  wire [DATA_WIDTH-1:0]  input_3_axis_tdata,
-    input  wire [KEEP_WIDTH-1:0]  input_3_axis_tkeep,
     input  wire                   input_3_axis_tvalid,
-    output wire                   input_3_axis_tready,
+    input wire                   input_3_axis_tready,
     input  wire                   input_3_axis_tlast,
-    input  wire [ID_WIDTH-1:0]    input_3_axis_tid,
-    input  wire [DEST_WIDTH-1:0]  input_3_axis_tdest,
-    input  wire [USER_WIDTH-1:0]  input_3_axis_tuser,
 
     /*
      * AXI output
      */
-    output wire [DATA_WIDTH-1:0]  output_axis_tdata,
-    output wire [KEEP_WIDTH-1:0]  output_axis_tkeep,
-    output wire                   output_axis_tvalid,
+    input wire [DATA_WIDTH-1:0]  output_axis_tdata,
+    input wire                   output_axis_tvalid,
     input  wire                   output_axis_tready,
-    output wire                   output_axis_tlast,
-    output wire [ID_WIDTH-1:0]    output_axis_tid,
-    output wire [DEST_WIDTH-1:0]  output_axis_tdest,
-    output wire [USER_WIDTH-1:0]  output_axis_tuser
+    input wire                   output_axis_tlast
 );
 
-wire [3:0] request;
-wire [3:0] acknowledge;
-wire [3:0] grant;
-wire grant_valid;
-wire [1:0] grant_encoded;
 
-assign acknowledge[0] = input_0_axis_tvalid & input_0_axis_tready & input_0_axis_tlast;
-assign request[0] = input_0_axis_tvalid & ~acknowledge[0];
-assign acknowledge[1] = input_1_axis_tvalid & input_1_axis_tready & input_1_axis_tlast;
-assign request[1] = input_1_axis_tvalid & ~acknowledge[1];
-assign acknowledge[2] = input_2_axis_tvalid & input_2_axis_tready & input_2_axis_tlast;
-assign request[2] = input_2_axis_tvalid & ~acknowledge[2];
-assign acknowledge[3] = input_3_axis_tvalid & input_3_axis_tready & input_3_axis_tlast;
-assign request[3] = input_3_axis_tvalid & ~acknowledge[3];
 
-// mux instance
-axis_mux_4 #(
-    .DATA_WIDTH(DATA_WIDTH),
+
+module Wrapper
+
+bind axis_arb_mux_4 verif_axis_arb_mux_4 # (
+
+	.DATA_WIDTH(DATA_WIDTH),
     .KEEP_ENABLE(KEEP_ENABLE),
     .KEEP_WIDTH(KEEP_WIDTH),
     .ID_ENABLE(ID_ENABLE),
     .ID_WIDTH(ID_WIDTH),
     .DEST_ENABLE(DEST_ENABLE),
-    .DEST_WIDTH(DEST_WIDTH),
     .USER_ENABLE(USER_ENABLE),
-    .USER_WIDTH(USER_WIDTH)
-)
-mux_inst (
-    .clk(clk),
-    .rst(rst),
+    .USER_WIDTH(USER_WIDTH),
+    .ARB_TYPE(ARB_TYPE),
+    .LSB_PRIORITY(LSB_PRIORITY)
+	
+
+
+
+)verif_axis_arb_mux_4_inst (
+
+	clk,
+    rst,
+    /*
+     * AXI inputs
+     */
     .input_0_axis_tdata(input_0_axis_tdata),
-    .input_0_axis_tkeep(input_0_axis_tkeep),
-    .input_0_axis_tvalid(input_0_axis_tvalid & grant[0]),
+    .input_0_axis_tvalid(input_0_axis_tvalid),
     .input_0_axis_tready(input_0_axis_tready),
     .input_0_axis_tlast(input_0_axis_tlast),
-    .input_0_axis_tid(input_0_axis_tid),
-    .input_0_axis_tdest(input_0_axis_tdest),
-    .input_0_axis_tuser(input_0_axis_tuser),
-    .input_1_axis_tdata(input_1_axis_tdata),
-    .input_1_axis_tkeep(input_1_axis_tkeep),
-    .input_1_axis_tvalid(input_1_axis_tvalid & grant[1]),
+	.input_1_axis_tdata(input_1_axis_tdata),
+    .input_1_axis_tvalid(input_1_axis_tvalid),
     .input_1_axis_tready(input_1_axis_tready),
     .input_1_axis_tlast(input_1_axis_tlast),
-    .input_1_axis_tid(input_1_axis_tid),
-    .input_1_axis_tdest(input_1_axis_tdest),
-    .input_1_axis_tuser(input_1_axis_tuser),
-    .input_2_axis_tdata(input_2_axis_tdata),
-    .input_2_axis_tkeep(input_2_axis_tkeep),
-    .input_2_axis_tvalid(input_2_axis_tvalid & grant[2]),
+	.input_2_axis_tdata(input_2_axis_tdata),
+    .input_2_axis_tvalid(input_2_axis_tvalid),
     .input_2_axis_tready(input_2_axis_tready),
     .input_2_axis_tlast(input_2_axis_tlast),
-    .input_2_axis_tid(input_2_axis_tid),
-    .input_2_axis_tdest(input_2_axis_tdest),
-    .input_2_axis_tuser(input_2_axis_tuser),
+
     .input_3_axis_tdata(input_3_axis_tdata),
-    .input_3_axis_tkeep(input_3_axis_tkeep),
-    .input_3_axis_tvalid(input_3_axis_tvalid & grant[3]),
+    .input_3_axis_tvalid(input_3_axis_tvalid),
     .input_3_axis_tready(input_3_axis_tready),
     .input_3_axis_tlast(input_3_axis_tlast),
-    .input_3_axis_tid(input_3_axis_tid),
-    .input_3_axis_tdest(input_3_axis_tdest),
-    .input_3_axis_tuser(input_3_axis_tuser),
+
+    /*
+     * AXI output
+     */
     .output_axis_tdata(output_axis_tdata),
-    .output_axis_tkeep(output_axis_tkeep),
     .output_axis_tvalid(output_axis_tvalid),
     .output_axis_tready(output_axis_tready),
-    .output_axis_tlast(output_axis_tlast),
-    .output_axis_tid(output_axis_tid),
-    .output_axis_tdest(output_axis_tdest),
-    .output_axis_tuser(output_axis_tuser),
-    .enable(grant_valid),
-    .select(grant_encoded)
+    .output_axis_tlast(output_axis_tlast)
+
+
 );
 
-// arbiter instance
-arbiter #(
-    .PORTS(4),
-    .TYPE(ARB_TYPE),
-    .BLOCK("ACKNOWLEDGE"),
-    .LSB_PRIORITY(LSB_PRIORITY)
-)
-arb_inst (
-    .clk(clk),
-    .rst(rst),
-    .request(request),
-    .acknowledge(acknowledge),
-    .grant(grant),
-    .grant_valid(grant_valid),
-    .grant_encoded(grant_encoded)
-);
+
+endmodule
+
+
+
+
 
 endmodule
