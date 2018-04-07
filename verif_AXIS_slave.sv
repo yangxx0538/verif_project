@@ -30,7 +30,21 @@
 	);
 
 	// Add user logic here
-
+	// AXI4STREAM_ERRM_TVALID_RESET: assert property (
+		// @(posedge s00_axis_aclk) $rose(s00_axis_aresetn) |-> s00_axis_tvalid == 0
+	// );
+	
+	// property stable_value(signal, condition);
+		// @(posedge s00_axis_aclk) disable iff (~s00_axis_aresetn | ~condition) 
+			// //$stable(signal) throughout  ($rose(condition) ##[1:$] $fell(condition));
+			// condition |=> ##1 (signal == $past(signal,1));
+	// endproperty
+	
+	property x_not_permit_rst(signal);
+		@(posedge s00_axis_aclk) s00_axis_aresetn |-> ~$isunknown(signal);
+	endproperty
+	
+	AXI4STREAM_ERRS_TREADY_X: assert property (x_not_permit_rst(s00_axis_tready));
 	// User logic ends
 
 	endmodule
@@ -38,16 +52,16 @@
 	
 	module Wrapper;
 	// Instantiation of Axi Bus Interface S00_AXIS
-	bind AXIS_slave # ( 
-		.C_S_AXIS_TDATA_WIDTH(C_S00_AXIS_TDATA_WIDTH)
-	) AXIS_slave_props AXIS_slave_props_inst (
-		.S_AXIS_ACLK(s00_axis_aclk),
-		.S_AXIS_ARESETN(s00_axis_aresetn),
-		.S_AXIS_TREADY(s00_axis_tready),
-		.S_AXIS_TDATA(s00_axis_tdata),
-		.S_AXIS_TSTRB(s00_axis_tstrb),
-		.S_AXIS_TLAST(s00_axis_tlast),
-		.S_AXIS_TVALID(s00_axis_tvalid)
+	bind AXIS_slave AXIS_slave_props # ( 
+		.C_S00_AXIS_TDATA_WIDTH(C_S_AXIS_TDATA_WIDTH)
+	) AXIS_slave_props_inst (
+		.s00_axis_aclk(S_AXIS_ACLK),
+		.s00_axis_aresetn(S_AXIS_ARESETN),
+		.s00_axis_tready(S_AXIS_TREADY),
+		.s00_axis_tdata(S_AXIS_TDATA),
+		.s00_axis_tstrb(S_AXIS_TSTRB),
+		.s00_axis_tlast(S_AXIS_TLAST),
+		.s00_axis_tvalid(S_AXIS_TVALID)
 	);
 	
 	endmodule
