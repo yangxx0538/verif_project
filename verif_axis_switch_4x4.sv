@@ -108,7 +108,10 @@ module verif_axis_switch_4x4 #
     output wire                   output_3_axis_tlast
 );
 
-	module Wrapper;
+endmodule
+	
+
+module Wrapper;
 	
 	bind axis_switch_4x4 verif_axis_switch_4x4 # ( 
 	
@@ -186,6 +189,6 @@ module verif_axis_switch_4x4 #
     .output_3_axis_tlast(output_3_axis_tlast)
 	);
 	
-	endmodule
+
 
 endmodule

@@ -30,7 +30,7 @@
 	);
 
 	// Add user logic here
-	AXI4STREAM_ERRM_TVALID_RESET: assert property (
+	AXI4STREAM_ERRM_TREADY_RESET: assert property (
 		@(posedge s00_axis_aclk) $rose(s00_axis_aresetn) |-> s00_axis_tready == 0
 	);
 	

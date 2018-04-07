@@ -36,29 +36,30 @@ module verif_priority_encoder #
     parameter LSB_PRIORITY = "LOW"
 )
 (
-    input  wire [WIDTH-1:0]         input_unencoded,
-    output wire                     output_valid,
-    output wire [$clog2(WIDTH)-1:0] output_encoded,
-    output wire [WIDTH-1:0]         output_unencoded
+    input wire [WIDTH-1:0]         input_unencoded,
+    input wire                     output_valid,
+    input wire [$clog2(WIDTH)-1:0] output_encoded,
+    input wire [WIDTH-1:0]         output_unencoded
+);
+
+assert property (
+	output_valid & (!input_unencoded[0] &!input_unencoded[1])
 );
 
 endmodule
 
 
-
-module Wrapper:
+module Wrapper;
 
 bind priority_encoder verif_priority_encoder # ( 
 		.WIDTH(WIDTH),
-		.LSB_PRIORITY(LSB_PRIORITY),
+		.LSB_PRIORITY(LSB_PRIORITY)
 		
 	) verif_priority_encoder_inst (
 		.input_unencoded(input_unencoded),
 		.output_valid(output_valid),
 		.output_encoded(output_encoded),
-		.output_unencoded(output_unencoded),
+		.output_unencoded(output_unencoded)
 	);
-
-
 
 endmodule

@@ -84,6 +84,9 @@ module verif_axis_mux_4 #
 );
 
 
+
+endmodule
+
 module Wrapper
 
 bind axis_mux_4 verif_axis_mux_4 # (
@@ -131,9 +134,6 @@ bind axis_mux_4 verif_axis_mux_4 # (
 
 
 
-
-
-endmodule
 
 
 endmodule
