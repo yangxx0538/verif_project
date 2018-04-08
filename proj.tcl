@@ -40,57 +40,39 @@
 
 #############################################################################
 
-# analyze -v2k {arbiter.v priority_encoder.v axis_switch_4x4.v};
-# analyze -sv {verif_axis_switch_4x4.sv};
-
-# #Elaborating the design
-# elaborate -top {axis_switch_4x4} -bbox_m {priority_encoder};
-
-# #You will need to add commands below
-
-# #Set the clock
-# clock -clear; clock clk
-
-# #Set Reset
-# reset -expression {rst};
-
-# #Prove all
-# prove -bg -all
-
-####################################################################
-
-# analyze -v2k {arbiter.v priority_encoder.v axis_arb_mux_4.v axis_mux_4.v};
-# analyze -sv {verif_axis_arb_mux_4.sv};
-
-# #Elaborating the design
-# elaborate -top {axis_arb_mux_4}; #-bbox_m {priority_encoder};
-
-# #You will need to add commands below
-
-# #Set the clock
-# clock -clear; clock clk
-
-# #Set Reset
-# reset -expression {rst};
-
-# #Prove all
-# prove -bg -all
-
-#################################################################3
-analyze -v2k {priority_encoder.v};
-analyze -sv {verif_priority_encoder.sv};
+analyze -v2k {arbiter.v priority_encoder.v axis_arb_mux_4.v axis_mux_4.v};
+analyze -sv {verif_axis_arb_mux_4.sv};
 
 #Elaborating the design
-elaborate -top {priority_encoder}; #-bbox_m {priority_encoder};
+elaborate -top {axis_arb_mux_4}; #-bbox_m {priority_encoder};
 
 #You will need to add commands below
 
 #Set the clock
-#clock -clear; clock clk
+clock -clear; clock clk
 
 #Set Reset
-#reset -expression {rst};
+reset -expression {rst};
 
 #Prove all
 prove -bg -all
+
+#################################################################3
+# analyze -v2k {priority_encoder.v};
+# analyze -sv {verif_priority_encoder.sv};
+
+# #Elaborating the design
+# elaborate -top {priority_encoder}; #-bbox_m {priority_encoder};
+
+# #You will need to add commands below
+
+# #Set the clock
+# clock -clear; clock -none
+
+# #Set Reset
+# reset -none;
+
+# #Prove all
+
+# prove -bg -all
 
