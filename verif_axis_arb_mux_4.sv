@@ -342,14 +342,23 @@ assert property(
 // assert property (input_tmp_output(select == 2'b10, input_2_axis_tvalid, input_2_axis_tdata));
 // assert property (input_tmp_output(select == 2'b11, input_3_axis_tvalid, input_3_axis_tdata));
 
-property input_tmp_output1 (sel, tvalid_in, dat_in);
+property input_tmp_output_data (sel, tvalid_in, dat_in);
 	@(posedge clk) disable iff(rst | !enable)
 		((output_axis_tready & sel & tvalid_in) ##1 !output_axis_tready) |=> ##1 output_axis_tdata == $past(dat_in,2);
 endproperty
-assert property (input_tmp_output1(select == 2'b00, input_0_axis_tvalid, input_0_axis_tdata));
-assert property (input_tmp_output1(select == 2'b01, input_1_axis_tvalid, input_1_axis_tdata));
-assert property (input_tmp_output1(select == 2'b10, input_2_axis_tvalid, input_2_axis_tdata));
-assert property (input_tmp_output1(select == 2'b11, input_3_axis_tvalid, input_3_axis_tdata));
+assert property (input_tmp_output_data(select == 2'b00, input_0_axis_tvalid, input_0_axis_tdata));
+assert property (input_tmp_output_data(select == 2'b01, input_1_axis_tvalid, input_1_axis_tdata));
+assert property (input_tmp_output_data(select == 2'b10, input_2_axis_tvalid, input_2_axis_tdata));
+assert property (input_tmp_output_data(select == 2'b11, input_3_axis_tvalid, input_3_axis_tdata));
+
+property input_tmp_output_valid (sel, tvalid_in, valid_in, ready_in, last_in);
+	@(posedge clk) disable iff(rst | !enable)
+		((output_axis_tready & sel & tvalid_in) ##1 !output_axis_tready) |=> ##1 output_axis_tvalid == $past(valid_in,2) & $past(ready_in,2) & $past(!last_in,2);
+endproperty
+assert property (input_tmp_output_valid(select == 2'b00, input_0_axis_tvalid, input_0_axis_tvalid, input_0_axis_tready, input_0_axis_tlast));
+assert property (input_tmp_output_valid(select == 2'b01, input_1_axis_tvalid, input_1_axis_tvalid, input_1_axis_tready, input_1_axis_tlast));
+assert property (input_tmp_output_valid(select == 2'b10, input_2_axis_tvalid, input_2_axis_tvalid, input_2_axis_tready, input_2_axis_tlast));
+assert property (input_tmp_output_valid(select == 2'b11, input_3_axis_tvalid, input_3_axis_tvalid, input_3_axis_tready, input_3_axis_tlast));
 
 // assert property(
 	// @(posedge clk) disable iff(rst | !enable)
