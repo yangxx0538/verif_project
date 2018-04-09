@@ -243,10 +243,38 @@ module verif_axis_mux_4 #
     input  wire                   enable,
     input  wire [1:0]             select
 );
+// assume property (
+	// @(posedge clk) $rose(output_axis_tvalid)|=> ##[0:10] output_axis_tready
+// );
+property get_ready_ensure(tvalid, tready);
+	@(posedge clk) $rose(tvalid) |-> enable throughout tready[->1] ##1 !tvalid;
+endproperty
+assume property(get_ready_ensure(input_0_axis_tvalid, input_0_axis_tready));
+assume property(get_ready_ensure(input_1_axis_tvalid, input_1_axis_tready));
+assume property(get_ready_ensure(input_2_axis_tvalid, input_2_axis_tready));
+assume property(get_ready_ensure(input_3_axis_tvalid, input_3_axis_tready));
+
+
+property assume_transmit_done(tlast, tvalid);
+	@(posedge clk) disable iff (rst) $rose(tlast) |-> ##1 !tvalid ##1 !tlast;
+endproperty
+assume property (assume_transmit_done(input_0_axis_tlast, input_0_axis_tvalid));
+assume property (assume_transmit_done(input_1_axis_tlast, input_1_axis_tvalid));
+assume property (assume_transmit_done(input_2_axis_tlast, input_2_axis_tvalid));
+assume property (assume_transmit_done(input_3_axis_tlast, input_3_axis_tvalid));
+
+property last_to_valid (tlast, sel);
+	@(posedge clk) disable iff (rst) !tlast |=> sel == $past(sel, 1);
+endproperty
+assume property (last_to_valid(input_0_axis_tlast, select));
+assume property (last_to_valid(input_1_axis_tlast, select));
+assume property (last_to_valid(input_2_axis_tlast, select));
+assume property (last_to_valid(input_3_axis_tlast, select));
+
 
 
 assert property(
-	@(posedge clk) $fell(rst) |-> output_axis_tvalid == 0 & input_3_axis_tvalid == 0 & input_2_axis_tvalid == 0 & input_1_axis_tvalid == 0 & input_0_axis_tvalid == 0 
+	@(posedge clk) $fell(rst) |-> output_axis_tvalid == 0 & input_3_axis_tready == 0 & input_2_axis_tready == 0 & input_1_axis_tready == 0 & input_0_axis_tready == 0 
 );
 
 assert property(
@@ -276,10 +304,41 @@ assert property(
 	@(posedge clk) disable iff(rst | !enable) $past(select == 2'b11,1) & output_axis_tready & $past(output_axis_tready,1) |=> output_axis_tvalid == ($past(input_3_axis_tvalid,1) & $past(input_3_axis_tready,1) & $past(!input_3_axis_tlast,1) )
 );
 
+
+assert property(
+   @(posedge clk) disable iff(rst | !enable)
+       $rose(select == 2'b00 & input_0_axis_tvalid == 1'b1 & output_axis_tready == 1'b1) |-> ##[2:3] output_axis_tdata == $past(input_0_axis_tdata,2)
+);
+
+assert property(
+   @(posedge clk) disable iff(rst | !enable)
+       $rose(select == 2'b01 & input_1_axis_tvalid == 1'b1 & output_axis_tready == 1'b1) |-> ##[2:3] output_axis_tdata == $past(input_1_axis_tdata,2)
+);
+
+assert property(
+   @(posedge clk) disable iff(rst | !enable)
+       $rose(select == 2'b10 & input_2_axis_tvalid == 1'b1 & output_axis_tready == 1'b1) |-> ##[2:3] output_axis_tdata == $past(input_2_axis_tdata,2)
+);
+
+assert property(
+   @(posedge clk) disable iff(rst | !enable)
+       $rose(select == 2'b11 & input_3_axis_tvalid == 1'b1 & output_axis_tready == 1'b1) |-> ##[2:3] output_axis_tdata == $past(input_3_axis_tdata,2)
+);
+
+
 //output valid
 // assert property(
 	// @(posedge clk) disable iff(rst | !enable) $past(select == 2'b00,2) & output_axis_tready & $past(output_axis_tready,1) & $past(output_axis_tready,2) & $past(input_0_axis_tvalid,1) & $past(input_0_axis_tready,1) & $past(!input_0_axis_tlast,1) & $past(select == 2'b01,1) & $past(!input_1_axis_tvalid,1) |=> output_axis_tvalid == 0
 // );
+property input_tmp_output (sel, tvalid_in, dat_in);
+	@(posedge clk) disable iff(rst | !enable)
+		((output_axis_tready & sel & tvalid_in == 1'b1) ##1 !output_axis_tready ##1 output_axis_tready) |-> output_axis_tdata == $past(dat_in,3);
+endproperty
+assert property (input_tmp_output(select == 2'b00, input_0_axis_tvalid, input_0_axis_tdata));
+assert property (input_tmp_output(select == 2'b01, input_1_axis_tvalid, input_1_axis_tdata));
+assert property (input_tmp_output(select == 2'b10, input_2_axis_tvalid, input_2_axis_tdata));
+assert property (input_tmp_output(select == 2'b11, input_3_axis_tvalid, input_3_axis_tdata));
+
 
 endmodule
 
