@@ -189,6 +189,75 @@ cover property(rise_once(request[3]));
 endmodule
 
 
+module verif_arbiter_rr #
+(
+    parameter PORTS = 4,
+    // arbitration type: "PRIORITY" or "ROUND_ROBIN"
+    parameter TYPE = "ROUND_ROBIN",
+    // block type: "NONE", "REQUEST", "ACKNOWLEDGE"
+    parameter BLOCK = "ACKNOWLEDGE",
+    // LSB priority: "LOW", "HIGH"
+    parameter LSB_PRIORITY = "HIGH"
+)
+(
+    input  wire                     clk,
+    input  wire                     rst,
+
+    input  wire [PORTS-1:0]         request,
+    input  wire [PORTS-1:0]         acknowledge,
+	input wire request_valid,
+
+    input wire [PORTS-1:0]         grant,
+    input wire                     grant_valid,
+    input wire [$clog2(PORTS)-1:0] grant_encoded
+);
+
+
+property req_until_grant(gnt, req, ack);
+	@(posedge clk) disable iff(rst) req & (!gnt | !ack) |=> req; //$rose(req) |-> (req throughout (ack & gnt)[->1] ) ##1 !req ;
+endproperty
+assume property (req_until_grant(grant[0], request[0], acknowledge[0]));
+assume property (req_until_grant(grant[1], request[1], acknowledge[1]));
+assume property (req_until_grant(grant[2], request[2], acknowledge[2]));
+assume property (req_until_grant(grant[3], request[3], acknowledge[3]));
+
+property gnt_until_ack(gnt, req, ack);
+	@(posedge clk) disable iff(rst) $rose(gnt) |-> (gnt throughout ack[->1]) ##1 !req;
+endproperty
+assume property (gnt_until_ack(grant[0], request[0], acknowledge[0]));
+assume property (gnt_until_ack(grant[1], request[1], acknowledge[1]));
+assume property (gnt_until_ack(grant[2], request[2], acknowledge[2]));
+assume property (gnt_until_ack(grant[3], request[3], acknowledge[3]));
+
+property have_ack(gnt, ack);
+	@(posedge clk) disable iff(rst) $rose(gnt) |-> ##[0:5] ack;
+endproperty
+assume property( have_ack(grant[0], acknowledge[0]) );
+assume property( have_ack(grant[1], acknowledge[1]) );
+assume property( have_ack(grant[2], acknowledge[2]) );
+assume property( have_ack(grant[3], acknowledge[3]) );
+
+assert property(
+	@(posedge clk) disable iff(rst) $onehot0(grant)
+);
+
+property no_grant_without_req(gnt, req);
+	@(posedge clk) disable iff(rst) $rose(gnt) |-> $past(req,1);
+endproperty
+assert property (no_grant_without_req(grant[0], request[0]));
+assert property (no_grant_without_req(grant[1], request[1]));
+assert property (no_grant_without_req(grant[2], request[2]));
+assert property (no_grant_without_req(grant[3], request[3]));
+
+assert property(
+	@(posedge clk) $fell(rst) |-> (!grant)
+);
+
+
+						
+						
+endmodule
+
 
 module verif_axis_mux_4 #
 (
@@ -249,13 +318,15 @@ module verif_axis_mux_4 #
 // );
 
 
-property get_ready_ensure(tvalid, tready);
-	@(posedge clk) $rose(tvalid) |-> enable throughout tready[->1] ##1 !tvalid;
+property get_ready_ensure(tvalid, tready, tlast);
+	//@(posedge clk) $rose(tvalid) |-> enable throughout tready[->1] ##1 !tvalid;
+
+	@(posedge clk) $rose(tvalid) |-> enable throughout (tready & tlast)[->1] ##1 !tvalid;
 endproperty
-assume property(get_ready_ensure(input_0_axis_tvalid, input_0_axis_tready));
-assume property(get_ready_ensure(input_1_axis_tvalid, input_1_axis_tready));
-assume property(get_ready_ensure(input_2_axis_tvalid, input_2_axis_tready));
-assume property(get_ready_ensure(input_3_axis_tvalid, input_3_axis_tready));
+assume property(get_ready_ensure(input_0_axis_tvalid, input_0_axis_tready, input_0_axis_tlast));
+assume property(get_ready_ensure(input_1_axis_tvalid, input_1_axis_tready, input_1_axis_tlast));
+assume property(get_ready_ensure(input_2_axis_tvalid, input_2_axis_tready, input_2_axis_tlast));
+assume property(get_ready_ensure(input_3_axis_tvalid, input_3_axis_tready, input_3_axis_tlast));
 
 
 property assume_transmit_done(tlast, tvalid);
@@ -265,6 +336,31 @@ assume property (assume_transmit_done(input_0_axis_tlast, input_0_axis_tvalid));
 assume property (assume_transmit_done(input_1_axis_tlast, input_1_axis_tvalid));
 assume property (assume_transmit_done(input_2_axis_tlast, input_2_axis_tvalid));
 assume property (assume_transmit_done(input_3_axis_tlast, input_3_axis_tvalid));
+
+property stable_data(data, tvalid, tready);
+	@(posedge clk) disable iff (rst) ~(tvalid & tready) |=> data == $past(data, 1);
+endproperty
+assume property (stable_data(input_0_axis_tdata, input_0_axis_tvalid, input_0_axis_tready));
+assume property (stable_data(input_1_axis_tdata, input_1_axis_tvalid, input_1_axis_tready));
+assume property (stable_data(input_2_axis_tdata, input_2_axis_tvalid, input_2_axis_tready));
+assume property (stable_data(input_3_axis_tdata, input_3_axis_tvalid, input_3_axis_tready));
+
+assume property(
+	@(posedge clk) disable iff (rst) $rose(output_axis_tvalid) |-> ##[1:2] output_axis_tready
+);
+assume property(
+	@(posedge clk) disable iff (rst) $rose(output_axis_tready) |-> output_axis_tready throughout (output_axis_tvalid & output_axis_tready) [->1] ##1 output_axis_tready
+);
+sequence data_check(t, in, out);
+	##t out == $past(in, t+1);
+endsequence
+property data_consistent(valid, ready, dat_in, dat_out, sel);
+	@(posedge clk) disable iff(rst) sel ##1 (valid & ready) |-> data_check(0, dat_in, dat_out) or data_check(1, dat_in, dat_out) or data_check(2, dat_in, dat_out);
+endproperty
+assert property (data_consistent(input_0_axis_tvalid, input_0_axis_tready, input_0_axis_tdata, output_axis_tdata, select == 2'b00));
+assert property (data_consistent(input_1_axis_tvalid, input_1_axis_tready, input_1_axis_tdata, output_axis_tdata, select == 2'b01));
+assert property (data_consistent(input_2_axis_tvalid, input_2_axis_tready, input_2_axis_tdata, output_axis_tdata, select == 2'b10));
+assert property (data_consistent(input_3_axis_tvalid, input_3_axis_tready, input_3_axis_tdata, output_axis_tdata, select == 2'b11)); 
 
 // property last_to_valid (tlast, sel);
 	// @(posedge clk) disable iff (rst) !tlast |=> sel == $past(sel, 1);
@@ -308,25 +404,28 @@ assert property(
 );
 
 
-assert property(
-   @(posedge clk) disable iff(rst | !enable)
-       $rose(select == 2'b00 & input_0_axis_tvalid == 1'b1 & output_axis_tready == 1'b1) |-> ##[2:3] output_axis_tdata == $past(input_0_axis_tdata,2)
-);
+// assert property(
+   // @(posedge clk) disable iff(rst | !enable)
+       // $rose(select == 2'b00 & input_0_axis_tvalid == 1'b1 & output_axis_tready == 1'b1) |-> ##[1:2] output_axis_tdata == $past(input_0_axis_tdata,1)
+// );
 
-assert property(
-   @(posedge clk) disable iff(rst | !enable)
-       $rose(select == 2'b01 & input_1_axis_tvalid == 1'b1 & output_axis_tready == 1'b1) |-> ##[2:3] output_axis_tdata == $past(input_1_axis_tdata,2)
-);
+// assert property(
+   // @(posedge clk) disable iff(rst | !enable)
+       // $rose(select == 2'b01 & input_1_axis_tvalid == 1'b1 & output_axis_tready == 1'b1) |-> ##[1:2] output_axis_tdata == $past(input_1_axis_tdata,1)
+// );
+// // assert property(
+   // // @(posedge clk) disable iff(rst | !enable)
+       // // $rose(select == 2'b01 & input_1_axis_tvalid == 1'b1 & output_axis_tready == 1'b1) |-> ##[1:2] output_axis_tdata == $past(input_1_axis_tdata,2)
+// // );
+// assert property(
+   // @(posedge clk) disable iff(rst | !enable)
+       // $rose(select == 2'b10 & input_2_axis_tvalid == 1'b1 & output_axis_tready == 1'b1) |-> ##[1:2] output_axis_tdata == $past(input_2_axis_tdata,1)
+// );
 
-assert property(
-   @(posedge clk) disable iff(rst | !enable)
-       $rose(select == 2'b10 & input_2_axis_tvalid == 1'b1 & output_axis_tready == 1'b1) |-> ##[2:3] output_axis_tdata == $past(input_2_axis_tdata,2)
-);
-
-assert property(
-   @(posedge clk) disable iff(rst | !enable)
-       $rose(select == 2'b11 & input_3_axis_tvalid == 1'b1 & output_axis_tready == 1'b1) |-> ##[2:3] output_axis_tdata == $past(input_3_axis_tdata,2)
-);
+// assert property(
+   // @(posedge clk) disable iff(rst | !enable)
+       // $rose(select == 2'b11 & input_3_axis_tvalid == 1'b1 & output_axis_tready == 1'b1) |-> ##[1:2] output_axis_tdata == $past(input_3_axis_tdata,1)
+// );
 
 
 //output valid
@@ -342,14 +441,14 @@ assert property(
 // assert property (input_tmp_output(select == 2'b10, input_2_axis_tvalid, input_2_axis_tdata));
 // assert property (input_tmp_output(select == 2'b11, input_3_axis_tvalid, input_3_axis_tdata));
 
-property input_tmp_output_data (sel, tvalid_in, dat_in);
-	@(posedge clk) disable iff(rst | !enable)
-		((output_axis_tready & sel & tvalid_in) ##1 !output_axis_tready) |=> ##1 output_axis_tdata == $past(dat_in,2);
-endproperty
-assert property (input_tmp_output_data(select == 2'b00, input_0_axis_tvalid, input_0_axis_tdata));
-assert property (input_tmp_output_data(select == 2'b01, input_1_axis_tvalid, input_1_axis_tdata));
-assert property (input_tmp_output_data(select == 2'b10, input_2_axis_tvalid, input_2_axis_tdata));
-assert property (input_tmp_output_data(select == 2'b11, input_3_axis_tvalid, input_3_axis_tdata));
+// property input_tmp_output_data (sel, tvalid_in, dat_in);
+	// @(posedge clk) disable iff(rst | !enable)
+		// ((output_axis_tready & sel & tvalid_in) ##1 !output_axis_tready) |->  ##1 output_axis_tdata == $past(dat_in,2);
+// endproperty
+// assert property (input_tmp_output_data(select == 2'b00, input_0_axis_tvalid, input_0_axis_tdata));
+// assert property (input_tmp_output_data(select == 2'b01, input_1_axis_tvalid, input_1_axis_tdata));
+// assert property (input_tmp_output_data(select == 2'b10, input_2_axis_tvalid, input_2_axis_tdata));
+// assert property (input_tmp_output_data(select == 2'b11, input_3_axis_tvalid, input_3_axis_tdata));
 
 property input_tmp_output_valid (sel, tvalid_in, valid_in, ready_in, last_in);
 	@(posedge clk) disable iff(rst | !enable)
@@ -422,6 +521,25 @@ bind arbiter verif_arbiter # (
     .LSB_PRIORITY(LSB_PRIORITY)
 
 )verif_arbiter_inst (
+	.clk(clk),
+	.rst(rst),
+	.request(request),
+	.request_valid(request_valid),
+	.acknowledge(acknowledge),
+	.grant(grant),
+	.grant_valid(grant_valid),
+	.grant_encoded(grant_encoded)
+
+);
+
+bind arbiter verif_arbiter_rr # (
+
+	.PORTS(PORTS),
+    .TYPE(TYPE),
+    .BLOCK(BLOCK),
+    .LSB_PRIORITY(LSB_PRIORITY)
+
+)verif_arbiter_rr_inst (
 	.clk(clk),
 	.rst(rst),
 	.request(request),

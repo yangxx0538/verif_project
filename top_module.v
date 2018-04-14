@@ -2,10 +2,7 @@
 
 module top_module #
 (
-    parameter integer C_M_AXIS_TDATA_WIDTH = 0,
-
     parameter integer C_M_START_COUNT	= 32,
-
     parameter DATA_WIDTH = 8,
     parameter KEEP_ENABLE = (DATA_WIDTH>8),
     parameter KEEP_WIDTH = (DATA_WIDTH/8),
@@ -18,33 +15,32 @@ module top_module #
     // arbitration type: "PRIORITY" or "ROUND_ROBIN"
     parameter ARB_TYPE = "PRIORITY",
     // LSB priority: "LOW", "HIGH"
-    parameter LSB_PRIORITY = "HIGH",
-    parameter integer C_S_AXIS_TDATA_WIDTH	= 32
+    parameter LSB_PRIORITY = "HIGH"
 )
 (
     input wire clk,
     input wire rst,
-    output wire input_0_tdata,
+    output wire [DATA_WIDTH-1:0] input_0_tdata,
     output wire input_0_tvalid,
     output wire input_0_tlast,
     output wire input_0_tready,
 
-    output wire input_1_tdata,
+    output wire [DATA_WIDTH-1:0] input_1_tdata,
     output wire input_1_tvalid,
     output wire input_1_tlast,
     output wire input_1_tready,
 
-    output wire input_2_tdata,
+    output wire [DATA_WIDTH-1:0] input_2_tdata,
     output wire input_2_tvalid,
     output wire input_2_tlast,
     output wire input_2_tready,
 
-    output wire input_3_tdata,
+    output wire [DATA_WIDTH-1:0] input_3_tdata,
     output wire input_3_tvalid,
     output wire input_3_tlast,
     output wire input_3_tready,
 
-    output wire output_tdata,
+    output wire [DATA_WIDTH-1:0] output_tdata,
     output wire output_tready,
     output wire output_tvalid,
     output wire output_tlast
@@ -52,12 +48,12 @@ module top_module #
 );
 
 AXIS_master #(
-    .C_M_AXIS_TDATA_WIDTH(C_M_AXIS_TDATA_WIDTH),
+    .C_M_AXIS_TDATA_WIDTH(DATA_WIDTH),
     .C_M_START_COUNT(C_M_START_COUNT)
 )
 axis_master_0 (
     .M_AXIS_ACLK(clk),
-    .M_AXIS_ARESETN(rst),
+    .M_AXIS_ARESETN(~rst),
     .M_AXIS_TVALID(input_0_tvalid),
     .M_AXIS_TDATA(input_0_tdata),
     .M_AXIS_TLAST(input_0_tlast),
@@ -65,12 +61,12 @@ axis_master_0 (
 );
 
 AXIS_master #(
-    .C_M_AXIS_TDATA_WIDTH(C_M_AXIS_TDATA_WIDTH),
+    .C_M_AXIS_TDATA_WIDTH(DATA_WIDTH),
     .C_M_START_COUNT(C_M_START_COUNT)
 )
 axis_master_1 (
     .M_AXIS_ACLK(clk),
-    .M_AXIS_ARESETN(rst),
+    .M_AXIS_ARESETN(~rst),
     .M_AXIS_TVALID(input_1_tvalid),
     .M_AXIS_TDATA(input_1_tdata),
     .M_AXIS_TLAST(input_1_tlast),
@@ -78,12 +74,12 @@ axis_master_1 (
 );
 
 AXIS_master #(
-    .C_M_AXIS_TDATA_WIDTH(C_M_AXIS_TDATA_WIDTH),
+    .C_M_AXIS_TDATA_WIDTH(DATA_WIDTH),
     .C_M_START_COUNT(C_M_START_COUNT)
 )
 axis_master_2 (
     .M_AXIS_ACLK(clk),
-    .M_AXIS_ARESETN(rst),
+    .M_AXIS_ARESETN(~rst),
     .M_AXIS_TVALID(input_2_tvalid),
     .M_AXIS_TDATA(input_2_tdata),
     .M_AXIS_TLAST(input_2_tlast),
@@ -91,12 +87,12 @@ axis_master_2 (
 );
 
 AXIS_master #(
-    .C_M_AXIS_TDATA_WIDTH(C_M_AXIS_TDATA_WIDTH),
+    .C_M_AXIS_TDATA_WIDTH(DATA_WIDTH),
     .C_M_START_COUNT(C_M_START_COUNT)
 )
 axis_master_3 (
     .M_AXIS_ACLK(clk),
-    .M_AXIS_ARESETN(rst),
+    .M_AXIS_ARESETN(~rst),
     .M_AXIS_TVALID(input_3_tvalid),
     .M_AXIS_TDATA(input_3_tdata),
     .M_AXIS_TLAST(input_3_tlast),
@@ -148,11 +144,11 @@ axis_arb_mux_4 #(
 
 AXIS_slave # 
 (
-    .C_S_AXIS_TDATA_WIDTH(C_S_AXIS_TDATA_WIDTH)
+    .C_S_AXIS_TDATA_WIDTH(DATA_WIDTH)
 )
 (
     .S_AXIS_ACLK(clk),
-    .S_AXIS_ARESETN(.rst),
+    .S_AXIS_ARESETN(~rst),
     .S_AXIS_TREADY(output_tready),
     .S_AXIS_TDATA(output_tdata),
     .S_AXIS_TLAST(output_tlast),

@@ -76,3 +76,21 @@ prove -bg -all
 
 # prove -bg -all
 
+##############################################################
+ 
+# analyze -v2k {top_module.v arbiter.v priority_encoder.v axis_arb_mux_4.v axis_mux_4.v AXIS_master.v AXIS_slave.v};
+# analyze -sv {verif_top.sv};
+
+# #Elaborating the design
+# elaborate -top {top_module};
+
+# #You will need to add commands below
+
+# #Set the clock
+# clock -clear; clock clk
+
+# #Set Reset
+# reset -expression {rst};
+
+# #Prove all
+# prove -bg -all
