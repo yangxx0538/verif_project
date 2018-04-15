@@ -82,9 +82,23 @@ THE SOFTWARE.
 // );
 
 
+assert property(
+	@(posedge clk) input_0_tready |-> (!input_1_tready & !input_2_tready & !input_3_tready)
+);
+assert property(
+	@(posedge clk) input_1_tready |-> (!input_0_tready & !input_2_tready & !input_3_tready)
+);
+assert property(
+	@(posedge clk) input_2_tready |-> (!input_1_tready & !input_0_tready & !input_3_tready)
+);
+assert property(
+	@(posedge clk) input_3_tready |-> (!input_1_tready & !input_2_tready & !input_0_tready)
+);
+
 assert property (
 	@(posedge clk) $fell(rst) |-> input_0_tvalid == 0 & input_1_tvalid == 0 & input_2_tvalid == 0 & input_3_tvalid == 0
 );
+
 sequence dat(t,out, in);
 	##t out == $past(in,t-1);
 endsequence
@@ -92,12 +106,28 @@ property check_sel_data_consistent (tvalid, tready, tlast, out_tvalid, out_data,
 	@(posedge clk) disable iff (rst) tvalid & !(tvalid & tready & tlast) |-> dat(2, out_data, in_data) or dat(3, out_data, in_data) or dat(4, out_data, in_data);
 endproperty
 assert property (check_sel_data_consistent(input_0_tvalid, input_0_tready, input_0_tlast, output_tvalid, output_tdata, input_0_tdata));
-assert property (check_sel_data_consistent(input_1_tvalid, input_1_tready, input_1_tlast, output_tvalid, output_tdata, input_1_tdata));
-assert property (check_sel_data_consistent(input_2_tvalid, input_2_tready, input_2_tlast, output_tvalid, output_tdata, input_2_tdata));
-assert property (check_sel_data_consistent(input_3_tvalid, input_3_tready, input_3_tlast, output_tvalid, output_tdata, input_3_tdata));
+// assert property (check_sel_data_consistent(input_1_tvalid, input_1_tready, input_1_tlast, output_tvalid, output_tdata, input_1_tdata));
+// assert property (check_sel_data_consistent(input_2_tvalid, input_2_tready, input_2_tlast, output_tvalid, output_tdata, input_2_tdata));
+// assert property (check_sel_data_consistent(input_3_tvalid, input_3_tready, input_3_tlast, output_tvalid, output_tdata, input_3_tdata));
+assert property (
+	@(posedge clk) disable iff (rst) input_1_tvalid & !(input_1_tvalid & input_1_tready & input_1_tlast) & !(input_0_tvalid & !(input_0_tvalid & input_0_tready & input_0_tlast)) |-> dat(2, output_tdata, input_1_tdata) or dat(3, output_tdata, input_1_tdata) or dat(4, output_tdata, input_1_tdata)
+);
+assert property (
+	@(posedge clk) disable iff (rst) input_2_tvalid & !(input_2_tvalid & input_2_tready & input_2_tlast) & !(input_1_tvalid & !(input_1_tvalid & input_1_tready & input_1_tlast)) & !(input_0_tvalid & !(input_0_tvalid & input_0_tready & input_0_tlast)) |-> dat(2, output_tdata, input_2_tdata) or dat(3, output_tdata, input_2_tdata) or dat(4, output_tdata, input_2_tdata)
+);
+assert property (
+	@(posedge clk) disable iff (rst) input_3_tvalid & !(input_3_tvalid & input_3_tready & input_3_tlast) & !(input_2_tvalid & !(input_2_tvalid & input_2_tready & input_2_tlast)) & !(input_1_tvalid & !(input_1_tvalid & input_1_tready & input_1_tlast)) & !(input_0_tvalid & !(input_0_tvalid & input_0_tready & input_0_tlast)) |-> dat(2, output_tdata, input_3_tdata) or dat(3, output_tdata, input_3_tdata) or dat(4, output_tdata, input_3_tdata)
+);
+
 // assert property(
 	// @(posedge clk) disable iff (rst) input_0_tvalid & !(input_0_tvalid & input_0_tready & input_0_tlast) & output_tvalid |-> (##2 output_tdata == $past(input_0_tdata,1)) (##3 output_tdata == $past(input_0_tdata,2)) or (##4 output_tdata == $past(input_0_tdata,3))
 // );
+cover property(
+	@(posedge clk) disable iff(rst) $rose(output_tvalid)
+);
+cover property(
+	@(posedge clk) disable iff(rst) $rose(output_tready)
+);
 
 endmodule
 

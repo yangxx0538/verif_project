@@ -253,8 +253,30 @@ assert property(
 	@(posedge clk) $fell(rst) |-> (!grant)
 );
 
-
-						
+assert property(
+	@(posedge clk) disable iff(rst) $rose(request[0]) |-> acknowledge[3][=1] ##[0:4] (grant[0])
+);
+assert property(
+	@(posedge clk) disable iff(rst) $rose(request[1]) |-> acknowledge[0][=1] ##[0:4] (grant[1])
+);
+assert property(
+	@(posedge clk) disable iff(rst) $rose(request[2]) |-> acknowledge[1][=1] ##[0:4] (grant[2])
+);
+assert property(
+	@(posedge clk) disable iff(rst) $rose(request[3]) |-> acknowledge[2][=1] ##[0:4] (grant[3])
+);
+					
+property rise_once(signal);
+	@(posedge clk) disable iff(rst) $rose(signal);
+endproperty
+cover property(rise_once(grant[0]));
+cover property(rise_once(grant[1]));
+cover property(rise_once(grant[2]));
+cover property(rise_once(grant[3]));
+cover property(rise_once(request[0]));
+cover property(rise_once(request[1]));
+cover property(rise_once(request[2]));
+cover property(rise_once(request[3]));
 						
 endmodule
 
@@ -349,7 +371,7 @@ assume property(
 	@(posedge clk) disable iff (rst) $rose(output_axis_tvalid) |-> ##[1:2] output_axis_tready
 );
 assume property(
-	@(posedge clk) disable iff (rst) $rose(output_axis_tready) |-> output_axis_tready throughout (output_axis_tvalid & output_axis_tready) [->1] ##1 output_axis_tready
+	@(posedge clk) disable iff (rst) $rose(output_axis_tready) |-> output_axis_tready throughout (output_axis_tvalid & output_axis_tlast) [->1] ##1 !output_axis_tready
 );
 sequence data_check(t, in, out);
 	##t out == $past(in, t+1);
@@ -376,18 +398,18 @@ assert property(
 	@(posedge clk) $fell(rst) |-> output_axis_tvalid == 0 & input_3_axis_tready == 0 & input_2_axis_tready == 0 & input_1_axis_tready == 0 & input_0_axis_tready == 0 
 );
 
-assert property(
-	@(posedge clk) disable iff(rst | !enable) $past(select == 2'b00,1) & output_axis_tready & $past(output_axis_tready,1) |=> output_axis_tdata == $past(input_0_axis_tdata,1)
-);
-assert property(
-	@(posedge clk) disable iff(rst | !enable) $past(select == 2'b01,1) & output_axis_tready & $past(output_axis_tready,1) |=> output_axis_tdata == $past(input_1_axis_tdata,1)
-);
-assert property(
-	@(posedge clk) disable iff(rst | !enable) $past(select == 2'b10,1) & output_axis_tready & $past(output_axis_tready,1) |=> output_axis_tdata == $past(input_2_axis_tdata,1)
-);
-assert property(
-	@(posedge clk) disable iff(rst | !enable) $past(select == 2'b11,1) & output_axis_tready & $past(output_axis_tready,1) |=> output_axis_tdata == $past(input_3_axis_tdata,1)
-);
+// assert property(
+	// @(posedge clk) disable iff(rst | !enable) $past(select == 2'b00,1) & output_axis_tready & $past(output_axis_tready,1) |=> output_axis_tdata == $past(input_0_axis_tdata,1)
+// );
+// assert property(
+	// @(posedge clk) disable iff(rst | !enable) $past(select == 2'b01,1) & output_axis_tready & $past(output_axis_tready,1) |=> output_axis_tdata == $past(input_1_axis_tdata,1)
+// );
+// assert property(
+	// @(posedge clk) disable iff(rst | !enable) $past(select == 2'b10,1) & output_axis_tready & $past(output_axis_tready,1) |=> output_axis_tdata == $past(input_2_axis_tdata,1)
+// );
+// assert property(
+	// @(posedge clk) disable iff(rst | !enable) $past(select == 2'b11,1) & output_axis_tready & $past(output_axis_tready,1) |=> output_axis_tdata == $past(input_3_axis_tdata,1)
+// );
 
 //check tvalid
 assert property(
@@ -463,6 +485,30 @@ assert property (input_tmp_output_valid(select == 2'b11, input_3_axis_tvalid, in
 	// @(posedge clk) disable iff(rst | !enable)
 		// output_axis_tready[=2] |->select == 2'b00 & output_axis_tdata == $past(input_0_axis_tdata,2)
 // );
+
+property check_valid(sel, ready, valid);
+	@(posedge clk) disable iff(rst) sel ##1 ready & valid |-> ##1 output_axis_tvalid; 
+endproperty
+assert property (check_valid(select == 2'b00, input_0_axis_tready, input_0_axis_tvalid));
+assert property (check_valid(select == 2'b01, input_1_axis_tready, input_1_axis_tvalid));
+assert property (check_valid(select == 2'b10, input_2_axis_tready, input_2_axis_tvalid));
+assert property (check_valid(select == 2'b11, input_3_axis_tready, input_3_axis_tvalid));
+
+property check_ready(sel, ready);
+	@(posedge clk) disable iff(rst | !enable) sel & output_axis_tready |-> ##1 ready;
+endproperty
+assert property (check_ready(select == 2'b00, input_0_axis_tready));
+assert property (check_ready(select == 2'b01, input_1_axis_tready));
+assert property (check_ready(select == 2'b10, input_2_axis_tready));
+assert property (check_ready(select == 2'b11, input_3_axis_tready));
+
+cover property(
+	@(posedge clk) disable iff(rst) $rose(output_axis_tready)
+);
+cover property(
+	@(posedge clk) disable iff(rst) $rose(output_axis_tvalid)
+);
+
 endmodule
 
 
