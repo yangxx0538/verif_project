@@ -10,7 +10,7 @@
 
 
 		// Parameters of Axi Master Bus Interface M00_AXIS
-		parameter integer C_M00_AXIS_TDATA_WIDTH	= 32,
+		parameter integer C_M00_AXIS_TDATA_WIDTH	= 0,
 		parameter integer C_M00_AXIS_START_COUNT	= 32
 	)
 	(
@@ -79,7 +79,7 @@
 		// @(posedge m00_axis_aclk) disable iff (~m00_axis_aresetn) ~M_AXIS_TKEEP |-> ~m00_axis_tstrb
 	// );
 	property set_to_zero (condition, signal);
-		@(posedge m00_axis_aclk) disable iff (~m00_axis_aresetn) condition == 0 |-> signal == 0;
+		@(posedge m00_axis_aclk) disable iff (~m00_axis_aresetn) condition == 0 |-> $stable(signal);
 	endproperty
 	AXI4STREAM_ERRM_TDATA_TIEOFF: assert property(set_to_zero(C_M00_AXIS_TDATA_WIDTH,m00_axis_tdata));
 	// AXI4STREAM_ERRM_TKEEP_TIEOFF: assert property(set_to_zero(C_M00_AXIS_TDATA_WIDTH,M_AXIS_TKEEP));
@@ -109,71 +109,7 @@
 
 	endmodule
 	
-	module AXIS_master_props_0 #
-	(
-		// Users to add parameters here
-
-		// User parameters ends
-		// Do not modify the parameters beyond this line
-
-
-		// Parameters of Axi Master Bus Interface M00_AXIS
-		parameter integer C_M00_AXIS_TDATA_WIDTH	= 0,
-		parameter integer C_M00_AXIS_START_COUNT	= 32
-	)
-	(
-		// Users to add ports here
-		// input   [(C_M_AXIS_TDATA_WIDTH/8)-1 : 0] M_AXIS_TKEEP,
-		// input   [M_AXIS_TID_WIDTH-1:0] M_AXIS_TID,
-		// input   [M_AXIS_TDEST_WIDTH-1:0] M_AXIS_TDEST,
-		// input   [C_M_AXIS_TDATA_WIDTH-1:0] M_AXIS_TUSER
-		// User ports ends
-		// Do not modify the ports beyond this line
-
-
-		// Ports of Axi Master Bus Interface M00_AXIS
-		input wire  m00_axis_aclk,
-		input wire  m00_axis_aresetn,
-		input wire  m00_axis_tvalid,
-		input wire [ (C_M00_AXIS_TDATA_WIDTH-1 >=0 ? C_M00_AXIS_TDATA_WIDTH-1 : 0) : 0] m00_axis_tdata,
-		input wire [(C_M00_AXIS_TDATA_WIDTH/8)-1 : 0] m00_axis_tstrb,
-		input wire  m00_axis_tlast,
-		input wire  m00_axis_tready
-	);
-
-
-	// Add user logic here property for verification
-
-	property set_to_zero (condition, signal);
-		@(posedge m00_axis_aclk) disable iff (~m00_axis_aresetn) condition == 0 |-> signal == 0;
-	endproperty
-	AXI4STREAM_ERRM_TDATA_TIEOFF: assert property(set_to_zero(C_M00_AXIS_TDATA_WIDTH,m00_axis_tdata));
-	// AXI4STREAM_ERRM_TKEEP_TIEOFF: assert property(set_to_zero(C_M00_AXIS_TDATA_WIDTH,M_AXIS_TKEEP));
-	AXI4STREAM_ERRM_TSTRB_TIEOFF: assert property(set_to_zero(C_M00_AXIS_TDATA_WIDTH,m00_axis_tstrb));
-	// AXI4STREAM_ERRM_TUSER_TIEOFF: assert property(set_to_zero(C_M_AXIS_TDATA_WIDTH,M_AXIS_TUSER));
-	// AXI4STREAM_ERRM_TID_TIEOFF: assert property(set_to_zero(M_AXIS_TID_WIDTH,M_AXIS_TID));
-	// AXI4STREAM_ERRM_TDEST_TIEOFF: assert property(set_to_zero(M_AXIS_TDEST_WIDTH,M_AXIS_TDEST));
 	
-	// AXI4STREAM_AUXM_TID_TDTEST_WIDTH: assert property(
-		// @(posedge m00_axis_aclk) (M_AXIS_TID_WIDTH + M_AXIS_TDEST_WIDTH) <= 24
-	// );
-	
-	cover property (
-		@(posedge m00_axis_aclk) $rose(m00_axis_tvalid)
-	);
-	cover property (
-		@(posedge m00_axis_aclk) $rose(m00_axis_tready)
-	);
-	cover property (
-		@(posedge m00_axis_aclk) $rose(m00_axis_tlast)
-	);
-	cover property (
-		@(posedge m00_axis_aclk) m00_axis_tready && m00_axis_tvalid
-	);
-	
-	// User logic ends
-
-	endmodule
 	
 	
 	module Wrapper;
@@ -191,17 +127,5 @@
 		.m00_axis_tready(M_AXIS_TREADY)
 	);
 	
-	bind AXIS_master AXIS_master_props_0 # ( 
-		.C_M00_AXIS_TDATA_WIDTH(C_M_AXIS_TDATA_WIDTH),
-		.C_M00_AXIS_START_COUNT(C_M_START_COUNT)
-	)AXIS_master_props_inst_0 (
-		.m00_axis_aclk(M_AXIS_ACLK),
-		.m00_axis_aresetn(M_AXIS_ARESETN),
-		.m00_axis_tvalid(M_AXIS_TVALID),
-		.m00_axis_tdata(M_AXIS_TDATA),
-		.m00_axis_tstrb(M_AXIS_TSTRB),
-		.m00_axis_tlast(M_AXIS_TLAST),
-		.m00_axis_tready(M_AXIS_TREADY)
-	);
-	
 	endmodule
+	
