@@ -106,9 +106,7 @@ property check_sel_data_consistent (tvalid, tready, tlast, out_tvalid, out_data,
 	@(posedge clk) disable iff (rst) tvalid & !(tvalid & tready & tlast) |-> dat(2, out_data, in_data) or dat(3, out_data, in_data) or dat(4, out_data, in_data);
 endproperty
 assert property (check_sel_data_consistent(input_0_tvalid, input_0_tready, input_0_tlast, output_tvalid, output_tdata, input_0_tdata));
-// assert property (check_sel_data_consistent(input_1_tvalid, input_1_tready, input_1_tlast, output_tvalid, output_tdata, input_1_tdata));
-// assert property (check_sel_data_consistent(input_2_tvalid, input_2_tready, input_2_tlast, output_tvalid, output_tdata, input_2_tdata));
-// assert property (check_sel_data_consistent(input_3_tvalid, input_3_tready, input_3_tlast, output_tvalid, output_tdata, input_3_tdata));
+
 //assert property (
 //	@(posedge clk) disable iff (rst) input_1_tvalid & !(input_1_tvalid & input_1_tready & input_1_tlast) & !(input_0_tvalid & !(input_0_tvalid & input_0_tready & input_0_tlast)) |-> dat(2, output_tdata, input_1_tdata) or dat(3, output_tdata, input_1_tdata) or dat(4, output_tdata, input_1_tdata)
 //);
@@ -117,10 +115,6 @@ assert property (check_sel_data_consistent(input_0_tvalid, input_0_tready, input
 //);
 // assert property (
 	// @(posedge clk) disable iff (rst) input_3_tvalid & !(input_3_tvalid & input_3_tready & input_3_tlast) & !(input_2_tvalid & !(input_2_tvalid & input_2_tready & input_2_tlast)) & !(input_1_tvalid & !(input_1_tvalid & input_1_tready & input_1_tlast)) & !(input_0_tvalid & !(input_0_tvalid & input_0_tready & input_0_tlast)) |-> dat(2, output_tdata, input_3_tdata) or dat(3, output_tdata, input_3_tdata) or dat(4, output_tdata, input_3_tdata)
-// );
-
-// assert property(
-	// @(posedge clk) disable iff (rst) input_0_tvalid & !(input_0_tvalid & input_0_tready & input_0_tlast) & output_tvalid |-> (##2 output_tdata == $past(input_0_tdata,1)) (##3 output_tdata == $past(input_0_tdata,2)) or (##4 output_tdata == $past(input_0_tdata,3))
 // );
 cover property(
 	@(posedge clk) disable iff(rst) $rose(output_tvalid)
@@ -326,8 +320,8 @@ endmodule
 
 
 module Wrapper;
-
-bind top_module verif_top_module3 # (
+//change module number here below to verify 
+bind top_module verif_top_module # (
 
     .C_M_START_COUNT(C_M_START_COUNT),
 	.DATA_WIDTH(DATA_WIDTH),
@@ -343,7 +337,7 @@ bind top_module verif_top_module3 # (
     .ARB_TYPE(ARB_TYPE),
     // LSB priority: "LOW", "HIGH"
     .LSB_PRIORITY(LSB_PRIORITY)
-)verif_top_module_inst3 (
+)verif_top_module_inst (
 	.clk(clk),
 	.rst(rst),
 	.input_0_tdata(input_0_tdata),
